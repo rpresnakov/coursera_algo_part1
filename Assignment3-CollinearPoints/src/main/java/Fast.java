@@ -24,23 +24,19 @@ public class Fast {
             i++;
         }
 
-        Map<Double, Set<Double>> foundLines = new HashMap<>();
+        Arrays.sort(points);
         // array for storing line segment points
         Point[] lineSegment = new Point[count];
-        for (int p = 0; p < count - 3; p++) {
+        for (int p = 0; p < count; p++) {
             // base point
             Point basePoint = points[p];
 
-            String basePointString = basePoint.toString();
-            int x = Integer.valueOf(basePointString.substring(basePointString.indexOf('(') + 1, basePointString.indexOf(',')));
-            int y = Integer.valueOf(basePointString.substring(basePointString.indexOf(' ') + 1, basePointString.indexOf(')')));
-
             // copy and 'merge' sort all other points excepting base point
-            Point[] sorted = Arrays.copyOfRange(points, p + 1, count);
+            Point[] sorted = points.clone();
             MergeX.sort(sorted, basePoint.SLOPE_ORDER);
 
             int ind = 0;
-            int j = 0;
+            int j = 1;
 
             while (j < sorted.length) {
                 if (ind == 0) {
@@ -55,7 +51,7 @@ public class Fast {
                         j++;
                     } else {
                         if (ind >= 3) {
-                            printout(basePoint, lineSegment, ind + 1, foundLines);
+                            printout(basePoint, lineSegment, ind);
                         }
                         ind = 0;
                     }
@@ -63,59 +59,26 @@ public class Fast {
             }
 
             if (ind >= 3) {
-                printout(basePoint, lineSegment, ind + 1, foundLines);
+                printout(basePoint, lineSegment, ind);
             }
 
         }
         //System.out.println("End");
     }
 
-    private static void printout(Point basePoint, Point[] lineSegment, int count, Map<Double, Set<Double>> foundLines) {
-        //check if lines were drawn before
-        double slope = basePoint.slopeTo(lineSegment[0]);
-        Set<Double> foundLinePartB = foundLines.get(slope);
-        if (foundLinePartB == null) {
-            foundLinePartB = new HashSet<>();
-            foundLines.put(slope, foundLinePartB);
-        }
-
-        boolean found;
-        double idValue;
-
-        //parsing x and y from string as Point API don't allow us to do that eitherway
-        String basePointString = basePoint.toString();
-        int x = Integer.valueOf(basePointString.substring(basePointString.indexOf('(') + 1, basePointString.indexOf(',')));
-        int y = Integer.valueOf(basePointString.substring(basePointString.indexOf(' ') + 1, basePointString.indexOf(')')));
-
-        if (slope == Double.POSITIVE_INFINITY) {
-            idValue = x;
-        } else if (slope == 0) {
-            idValue = y;
-        } else {
-            idValue = y - x * slope;
-            //rounding
-            idValue = (long) (idValue * 1000) / 1000.;
-        }
-        found = foundLinePartB.contains(idValue);
-
-        if (found) {
+    private static void printout(Point basePoint, Point[] lineSegment, int count) {
+        // we rely on that fact that the first base point should be less than the next because
+        // originally before outer loop entire array was naturally sorted.
+        // And the very first segment printed out should contain the least first point.
+        if (basePoint.compareTo(lineSegment[0]) > 0) {
             return;
         }
 
-        // decide if to print it out or not
-        Point[] toSort = new Point[count];
-        toSort[0] = basePoint;
+        System.out.print(basePoint + " -> ");
         for (int ii = 0; ii < count - 1; ii++) {
-            toSort[ii + 1] = lineSegment[ii];
+            System.out.print(lineSegment[ii] + " -> ");
         }
-        Arrays.sort(toSort);
-
-        for (int ii = 0; ii < count - 1; ii++) {
-            System.out.print(toSort[ii] + " -> ");
-        }
-        System.out.println(toSort[count - 1]);
-        toSort[0].drawTo(toSort[count - 1]);
-
-        foundLinePartB.add(idValue);
+        System.out.println(lineSegment[count - 1]);
+        basePoint.drawTo(lineSegment[count - 1]);
     }
 }
