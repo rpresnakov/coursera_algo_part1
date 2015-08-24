@@ -11,10 +11,10 @@ public class Solver {
     private class Node implements Comparable<Node> {
 
         private Board board;
-        int moves;
+        private int moves;
         private Node previous;
 
-        Node (Board board, int moves, Node previous) {
+        Node(Board board, int moves, Node previous) {
             this.board = board;
             this.moves = moves;
             this.previous = previous;
@@ -30,6 +30,7 @@ public class Solver {
     }
 
     private MinPQ<Node> prQueue = new MinPQ<>();
+    private MinPQ<Node> prTwinQueue = new MinPQ<>();
     private boolean solvable = false;
     private Node goalNode = null;
 
@@ -43,23 +44,36 @@ public class Solver {
 
     private void solve(Board initial) {
         Node searchNode = new Node(initial, 0, null);
+        Node searchTwinNode = new Node(initial.twin(), 0, null);
         prQueue.insert(searchNode);
+        prTwinQueue.insert(searchTwinNode);
 
-        int moves = 0;
-        while (!prQueue.min().board.isGoal()) {
-            moves++;
+        while (!prQueue.min().board.isGoal() && !prTwinQueue.min().board.isGoal()) {
             searchNode = prQueue.delMin();
             for (Board neighbor : searchNode.board.neighbors()) {
                 if (searchNode.previous == null ||
                         !neighbor.equals(searchNode.previous.board)) {
-                    prQueue.insert(new Node(neighbor, moves, searchNode));
+                    prQueue.insert(new Node(neighbor, searchNode.moves + 1, searchNode));
+                }
+            }
+            searchTwinNode = prTwinQueue.delMin();
+            for (Board neighbor : searchTwinNode.board.neighbors()) {
+                if (searchTwinNode.previous == null ||
+                        !neighbor.equals(searchTwinNode.previous.board)) {
+                    prTwinQueue.insert(new Node(neighbor, searchTwinNode.moves + 1, searchTwinNode));
                 }
             }
         }
 
-        solvable = true;
-        goalNode = prQueue.delMin();
+        if (prTwinQueue.min().board.isGoal()) {
+            solvable = false;
+        } else {
+            solvable = true;
+            goalNode = prQueue.delMin();
+        }
+
         prQueue = null;
+        prTwinQueue = null;
     }
 
     public boolean isSolvable() {

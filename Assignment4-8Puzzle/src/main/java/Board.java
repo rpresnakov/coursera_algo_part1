@@ -18,7 +18,7 @@ public class Board {
     }
 
     public Board(int[][] blocks) {
-        this.blocks = blocks;
+        this.blocks = copyArray(blocks);
         N = blocks.length;
     }
 
@@ -74,9 +74,27 @@ public class Board {
     }
 
     public Board twin() {
-        return this;
+        if (N < 2) {
+            return new Board(this.blocks);
+        }
+
+        int[][] newBlocks = copyArray(this.blocks);
+
+        int i = 0;
+        while (true) {
+            if (newBlocks[i][0] != 0 && newBlocks[i][1] != 0) {
+                int tmp = newBlocks[i][0];
+                newBlocks[i][0] = newBlocks[i][1];
+                newBlocks[i][1] = tmp;
+                break;
+            }
+            i++;
+        }
+
+        return new Board(newBlocks);
     }
 
+    @Override
     public boolean equals(Object y) {
         if (this == y) {
             return true;
@@ -86,10 +104,12 @@ public class Board {
             return false;
         }
 
-        if (y instanceof Board) {
-            if (this.toString().equals(y.toString())) {
-                return true;
-            }
+        if (y.getClass() != this.getClass()) {
+            return false;
+        }
+
+        if (this.toString().equals(y.toString())) {
+            return true;
         }
 
         return false;
@@ -98,43 +118,42 @@ public class Board {
     public Iterable<Board> neighbors() {
         Stack<Board> neighbors = new Stack<>();
 
-        Coordinate zeroElement = findZero(blocks);
+        Coordinate zeroElement = findZero(this.blocks);
         Coordinate nonZeroElement = new Coordinate();
-        int[][] result;
 
         // left
         nonZeroElement.i = zeroElement.i;
         nonZeroElement.j = zeroElement.j - 1;
-        addNeighbor(neighbors, blocks, zeroElement, nonZeroElement);
+        addNeighbor(neighbors, this.blocks, zeroElement, nonZeroElement);
         // right
         nonZeroElement.i = zeroElement.i;
         nonZeroElement.j = zeroElement.j + 1;
-        addNeighbor(neighbors, blocks, zeroElement, nonZeroElement);
+        addNeighbor(neighbors, this.blocks, zeroElement, nonZeroElement);
         // up
         nonZeroElement.i = zeroElement.i - 1;
         nonZeroElement.j = zeroElement.j;
-        addNeighbor(neighbors, blocks, zeroElement, nonZeroElement);
+        addNeighbor(neighbors, this.blocks, zeroElement, nonZeroElement);
         // down
         nonZeroElement.i = zeroElement.i + 1;
         nonZeroElement.j = zeroElement.j;
-        addNeighbor(neighbors, blocks, zeroElement, nonZeroElement);
+        addNeighbor(neighbors, this.blocks, zeroElement, nonZeroElement);
 
         return neighbors;
     }
 
     /**
      * Find zero element.
-     * @param blocks
+     * @param originalBlocks
      * @return
      */
-    private Coordinate findZero(final int[][] blocks) {
+    private Coordinate findZero(final int[][] originalBlocks) {
         Coordinate zero = new Coordinate();
 
         int i = 0;
         int j = 0;
 
         // find zero element
-        while (blocks[i][j] != 0 && i < N) {
+        while (originalBlocks[i][j] != 0 && i < N) {
             if (j == N - 1) {
                 i++;
                 j = 0;
@@ -164,16 +183,23 @@ public class Board {
         }
 
         // copying array
-        int[][] result = new int[original.length][];
-        for (int i = 0; i < original.length; i++) {
-            result[i] = Arrays.copyOf(original[i], original.length);
-        }
+        int[][] result = copyArray(original);
 
         // exchanging elements;
         result[zeroElement.i][zeroElement.j] = result[nonZeroElement.i][nonZeroElement.j];
         result[nonZeroElement.i][nonZeroElement.j] = 0;
 
         neighbors.push(new Board(result));
+    }
+
+    private int[][] copyArray(int[][] original) {
+        // copying array
+        int[][] result = new int[original.length][];
+        for (int i = 0; i < original.length; i++) {
+            result[i] = Arrays.copyOf(original[i], original.length);
+        }
+
+        return result;
     }
 
     public String toString() {
@@ -215,5 +241,6 @@ public class Board {
 
         StdOut.println(initial.hamming());
         StdOut.println(initial.manhattan());
+        StdOut.println(initial.twin());
     }
 }
