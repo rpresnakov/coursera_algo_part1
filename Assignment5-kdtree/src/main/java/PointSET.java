@@ -69,7 +69,7 @@ public class PointSET {
         if (p == null) {
             throw new NullPointerException();
         }
-        double min = 2;
+        double min = 3;
         Point2D minPoint = null;
 
         for (Point2D point : points) {

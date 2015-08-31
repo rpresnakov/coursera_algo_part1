@@ -10,16 +10,29 @@ public class KdTree {
 
     private static class Node {
 
-        private Node(Point2D point, RectHV rect) {
-            this.point = point;
-            this.rect = rect;
-        }
-
         private Point2D point;
         private RectHV rect;
 
         private Node left = null;
         private Node right = null;
+
+        private Node(Point2D point, RectHV rect) {
+            this.point = point;
+            this.rect = rect;
+        }
+    }
+
+    private static class Coordinates {
+
+        private double xmin, ymin;
+        private double xmax, ymax;
+
+        private Coordinates(double xmin, double ymin, double xmax, double ymax) {
+            this.xmin = xmin;
+            this.xmax = xmax;
+            this.ymin = ymin;
+            this.ymax = ymax;
+        }
     }
 
     private Node root;
@@ -45,31 +58,35 @@ public class KdTree {
             throw new NullPointerException();
         }
 
-        root = insert(root,  p, new RectHV(0, 0, 1, 1), true);
-        size++;
+        root = insert(root,  p, new Coordinates(0, 0, 1, 1), true);
     }
 
-    private Node insert(Node node, Point2D point, RectHV rect, boolean compareX) {
+    private Node insert(Node node, Point2D point, Coordinates coord, boolean compareX) {
         if (node == null) {
-            node = new Node(point, rect);
+            RectHV resultRect = new RectHV(coord.xmin, coord.ymin, coord.xmax, coord.ymax);
+            node = new Node(point, resultRect);
+            size++;
+            return node;
+        }
+        if (node.point.equals(point)) {
             return node;
         }
 
         if (compareX) {
-            if ( point.x() < node.point.x()) {
+            if (point.x() < node.point.x()) {
                 node.left = insert(node.left, point,
-                        new RectHV(rect.xmin(), rect.ymin(), node.point.x(), rect.ymax()), !compareX);
+                        new Coordinates(coord.xmin, coord.ymin, node.point.x(), coord.ymax), !compareX);
             } else {
                 node.right = insert(node.right, point,
-                        new RectHV(node.point.x(), rect.ymin(), rect.xmax(), rect.ymax()), !compareX);
+                        new Coordinates(node.point.x(), coord.ymin, coord.xmax, coord.ymax), !compareX);
             }
         } else {
             if (point.y() < node.point.y()) {
                 node.left = insert(node.left, point,
-                        new RectHV(rect.xmin(), rect.ymin(), rect.xmax(), node.point.y()), !compareX);
+                        new Coordinates(coord.xmin, coord.ymin, coord.xmax, node.point.y()), !compareX);
             } else {
                 node.right = insert(node.right, point,
-                        new RectHV(rect.xmin(), node.point.y(), rect.xmax(), rect.ymax()), !compareX);
+                        new Coordinates(coord.xmin, node.point.y(), coord.xmax, coord.ymax), !compareX);
             }
         }
 
@@ -133,29 +150,59 @@ public class KdTree {
             throw new NullPointerException();
         }
         Stack<Point2D> stack = new Stack<>();
-//        for (Point2D point : points) {
-//            if (rect.contains(point)) {
-//                stack.push(point);
-//            }
-//        }
+        findAllPointsInRect(root, rect, stack);
         return stack;
     }
+
+    private void findAllPointsInRect(Node node, RectHV rect, Stack<Point2D> stack) {
+        if (node == null) {
+            return;
+        }
+        if (rect.contains(node.point)) {
+            stack.push(node.point);
+        }
+        if (node.left != null && node.left.rect.intersects(rect)) {
+            findAllPointsInRect(node.left, rect, stack);
+        }
+        if (node.right != null && node.right.rect.intersects(rect)) {
+            findAllPointsInRect(node.right, rect, stack);
+        }
+    }
+
 
     // a nearest neighbor in the set to point p; null if the set is empty
     public Point2D nearest(Point2D p) {
         if (p == null) {
             throw new NullPointerException();
         }
-        double min = 2;
-        Point2D minPoint = null;
+        if (root == null) {
+            return null;
+        }
+        Point2D minPoint = findNearest(p, root, root.point, true);
+        return minPoint;
+    }
 
-//        for (Point2D point : points) {
-//            double length = point.distanceSquaredTo(p);
-//            if (length < min) {
-//                min = length;
-//                minPoint = point;
-//            }
-//        }
+    private Point2D findNearest(Point2D point, Node node, Point2D minPoint, boolean compareX) {
+        if (node == null) {
+            return minPoint;
+        }
+        if (node.point.equals(point)) {
+            return node.point;
+        }
+        if (node.rect.distanceSquaredTo(point) < point.distanceSquaredTo(minPoint)) {
+            if (point.distanceSquaredTo(node.point) < point.distanceSquaredTo(minPoint)) {
+                minPoint = node.point;
+            }
+
+            if ((compareX && point.x() < node.point.x()) ||
+                    (!compareX && point.y() < node.point.y())) {
+                minPoint = findNearest(point, node.left, minPoint, !compareX);
+                minPoint = findNearest(point, node.right, minPoint, !compareX);
+            } else {
+                minPoint = findNearest(point, node.right, minPoint, !compareX);
+                minPoint = findNearest(point, node.left, minPoint, !compareX);
+            }
+        }
 
         return minPoint;
     }
