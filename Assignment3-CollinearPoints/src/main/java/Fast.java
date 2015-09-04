@@ -1,3 +1,7 @@
+import edu.princeton.cs.algs4.In;
+import edu.princeton.cs.algs4.MergeX;
+import edu.princeton.cs.algs4.StdDraw;
+
 import java.util.*;
 
 /**
