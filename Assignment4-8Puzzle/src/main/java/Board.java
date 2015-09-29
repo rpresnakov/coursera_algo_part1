@@ -176,7 +176,8 @@ public class Board {
      * @return
      */
     private void addNeighbor(
-            final Stack<Board> neighbors, final int[][] original, final Coordinate zeroElement, final Coordinate nonZeroElement) {
+            final Stack<Board> neighbors, final int[][] original,
+            final Coordinate zeroElement, final Coordinate nonZeroElement) {
         if (nonZeroElement.i < 0 || nonZeroElement.j < 0
                 || nonZeroElement.i >= N || nonZeroElement.j >= N) {
             return;
